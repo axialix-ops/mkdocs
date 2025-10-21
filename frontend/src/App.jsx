@@ -84,6 +84,7 @@ function App() {
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [wallets, setWallets] = useState([]);
     const [positions, setPositions] = useState([]);
+    const [symbol, setSymbol] = useState('bitcoin');
 
     useEffect(() => {
         if (token) {
@@ -123,11 +124,18 @@ function App() {
         <div className="App">
             <header>
                 <h1>Crypto Exchange Simulator</h1>
-                <button onClick={handleLogout}>Logout</button>
+                <div>
+                    <select value={symbol} onChange={e => setSymbol(e.target.value)}>
+                        <option value="bitcoin">Bitcoin</option>
+                        <option value="ethereum">Ethereum</option>
+                        <option value="ripple">Ripple</option>
+                    </select>
+                    <button onClick={handleLogout}>Logout</button>
+                </div>
             </header>
             <main>
                 <div className="chart-container">
-                    <TradingViewChart />
+                    <TradingViewChart symbol={symbol} />
                 </div>
                 <div className="sidebar">
                     <Wallet wallets={wallets} />

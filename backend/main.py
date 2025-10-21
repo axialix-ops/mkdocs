@@ -42,6 +42,6 @@ app.include_router(trades.router, prefix="/api/trades", tags=["Торговля"
 app.include_router(websockets.router, tags=["WebSocket"])
 
 
-@app.get("/", summary="Корневой эндпоинт")
+@app.get("/", summary="Root endpoint")
 def read_root():
-    return {"сообщение": "Добро пожаловать в API Симулятора Криптобиржи"}
+    return {"message": "Welcome to the Crypto Exchange Simulator API"}

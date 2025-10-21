@@ -1,16 +1,18 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createChart } from 'lightweight-charts';
 
-const TradingViewChart = () => {
+const TradingViewChart = ({ symbol = 'bitcoin' }) => {
     const chartContainerRef = useRef();
     const candleSeriesRef = useRef();
+    const chartRef = useRef();
+    const resizeObserverRef = useRef();
 
     useEffect(() => {
-        const chart = createChart(chartContainerRef.current, {
-            width: 900,
-            height: 500,
+        chartRef.current = createChart(chartContainerRef.current, {
+            width: chartContainerRef.current.clientWidth,
+            height: chartContainerRef.current.clientHeight,
             layout: {
-                backgroundColor: '#131722',
+                backgroundColor: '#000000',
                 textColor: 'rgba(255, 255, 255, 0.9)',
             },
             grid: {
@@ -43,17 +45,19 @@ const TradingViewChart = () => {
             wickUpColor: '#26a69a',
         });
 
-        const ws = new WebSocket(`ws://${window.location.host.replace('3000', '8000')}/ws/prices`);
+        const ws = new WebSocket(`ws://${window.location.host.replace('3000', '8000')}/ws/prices/${symbol}`);
 
         ws.onopen = () => {
-            console.log("WebSocket connection opened");
+            console.log(`WebSocket connection opened for ${symbol}`);
         };
 
         ws.onmessage = (event) => {
             const candleData = JSON.parse(event.data);
-            // Преобразуем время из ISO-строки в Unix-таймстемп
-            candleData.time = new Date(candleData.time).getTime() / 1000;
-            candleSeriesRef.current.update(candleData);
+            if (candleData.symbol === symbol) {
+                // Преобразуем время из ISO-строки в Unix-таймстемп
+                candleData.time = new Date(candleData.time).getTime() / 1000;
+                candleSeriesRef.current.update(candleData);
+            }
         };
 
         ws.onclose = () => {
@@ -67,11 +71,35 @@ const TradingViewChart = () => {
 
         return () => {
             ws.close();
-            chart.remove();
+            if (resizeObserverRef.current) {
+                resizeObserverRef.current.disconnect();
+            }
+            if (chartRef.current) {
+                chartRef.current.remove();
+            }
         };
     }, []);
 
-    return <div ref={chartContainerRef} />;
+    useEffect(() => {
+        resizeObserverRef.current = new ResizeObserver(entries => {
+            const { width, height } = entries[0].contentRect;
+            if (chartRef.current) {
+                chartRef.current.applyOptions({ width, height });
+            }
+        });
+
+        if (chartContainerRef.current) {
+            resizeObserverRef.current.observe(chartContainerRef.current);
+        }
+
+        return () => {
+            if (resizeObserverRef.current) {
+                resizeObserverRef.current.disconnect();
+            }
+        };
+    }, []);
+
+    return <div ref={chartContainerRef} style={{ width: '100%', height: '100vh' }} />;
 };
 
 export default TradingViewChart;

@@ -9,69 +9,99 @@ router = APIRouter()
 
 class МенеджерСоединений:
     def __init__(self):
-        self.активные_соединения: list[WebSocket] = []
+        self.активные_соединения: dict[str, list[WebSocket]] = {}
 
-    async def подключить(self, websocket: WebSocket):
+    async def подключить(self, websocket: WebSocket, symbol: str):
         await websocket.accept()
-        self.активные_соединения.append(websocket)
+        if symbol not in self.активные_соединения:
+            self.активные_соединения[symbol] = []
+        self.активные_соединения[symbol].append(websocket)
 
-    def отключить(self, websocket: WebSocket):
-        self.активные_соединения.remove(websocket)
+    def отключить(self, websocket: WebSocket, symbol: str):
+        if symbol in self.активные_соединения:
+            self.активные_соединения[symbol].remove(websocket)
+            if not self.активные_соединения[symbol]:
+                del self.активные_соединения[symbol]
 
     async def транслировать_свечу(self, данные_свечи: dict):
-        сообщение = json.dumps(данные_свечи)
-        for соединение in self.активные_соединения:
-            await соединение.send_text(сообщение)
+        symbol = данные_свечи.get("symbol")
+        if symbol and symbol in self.активные_соединения:
+            сообщение = json.dumps(данные_свечи)
+            for соединение in self.активные_соединения[symbol]:
+                await соединение.send_text(сообщение)
 
 менеджер = МенеджерСоединений()
+
+import random
 
 async def транслировать_обновления_цен():
     """
     Асинхронная задача для трансляции данных о новых свечах всем подключенным WebSocket клиентам.
     """
-    дб: Session = SessionLocal()
-    id_последней_трансляции = -1
+    tracked_symbols = ['bitcoin', 'ethereum', 'ripple']
+    last_candles = {}
+
     while True:
-        # Получаем последнюю сгенерированную свечу
-        последняя_свеча = дб.query(РыночныеДанные).order_by(РыночныеДанные.метка_времени.desc()).first()
+        try:
+            price_data = cg.get_price(ids=tracked_symbols, vs_currencies='usd')
 
-        if последняя_свеча and последняя_свеча.id != id_последней_трансляции:
-            данные_свечи = {
-                "time": последняя_свеча.метка_времени.isoformat(),
-                "open": последняя_свеча.цена_открытия,
-                "high": последняя_свеча.максимум,
-                "low": последняя_свеча.минимум,
-                "close": последняя_свеча.цена_закрытия,
-            }
-            await менеджер.транслировать_свечу(данные_свечи)
-            id_последней_трансляции = последняя_свеча.id
+            for symbol in tracked_symbols:
+                if symbol in price_data:
+                    current_price = price_data[symbol]['usd']
+                    now = int(time.time())
 
-        await asyncio.sleep(1) # Проверяем наличие новой свечи каждую секунду
+                    if symbol not in last_candles or (now - last_candles[symbol]['time']) >= 60:
+                        # Новая свеча каждую минуту
+                        last_candles[symbol] = {
+                            "time": now,
+                            "open": current_price,
+                            "high": current_price,
+                            "low": current_price,
+                            "close": current_price,
+                            "symbol": symbol,
+                        }
+                    else:
+                        # Обновляем текущую свечу
+                        last_candles[symbol]['high'] = max(last_candles[symbol]['high'], current_price)
+                        last_candles[symbol]['low'] = min(last_candles[symbol]['low'], current_price)
+                        last_candles[symbol]['close'] = current_price
 
-@router.websocket("/ws/prices", name="ws_цены")
-async def websocket_эндпоинт(websocket: WebSocket):
+                    await менеджер.транслировать_свечу(last_candles[symbol])
+
+        except Exception as e:
+            print(f"Error fetching prices from CoinGecko: {e}")
+
+        await asyncio.sleep(10)
+
+import os
+from dotenv import load_dotenv
+from pycoingecko import CoinGeckoAPI
+
+load_dotenv()
+api_key = os.getenv("COINGECKO_API_KEY")
+cg = CoinGeckoAPI(api_key=api_key)
+
+@router.websocket("/ws/prices/{symbol}", name="ws_цены")
+async def websocket_эндпоинт(websocket: WebSocket, symbol: str):
     """
     WebSocket эндпоинт для получения исторических и реал-тайм данных о свечах.
     """
-    await менеджер.подключить(websocket)
+    await менеджер.подключить(websocket, symbol)
     try:
         # Отправляем исторические данные при подключении
-        дб: Session = SessionLocal()
-        история = дб.query(РыночныеДанные).order_by(РыночныеДанные.метка_времени.asc()).limit(300).all()
-        for свеча in история:
-            данные_свечи = {
-                "time": свеча.метка_времени.isoformat(),
-                "open": свеча.цена_открытия,
-                "high": свеча.максимум,
-                "low": свеча.минимум,
-                "close": свеча.цена_закрытия,
+        ohlc_data = cg.get_coin_ohlc_by_id(id=symbol, vs_currency='usd', days=90)
+        for entry in ohlc_data:
+            candle_data = {
+                "time": entry[0] / 1000,
+                "open": entry[1],
+                "high": entry[2],
+                "low": entry[3],
+                "close": entry[4],
             }
-            await websocket.send_text(json.dumps(данные_свечи))
+            await websocket.send_text(json.dumps(candle_data))
 
         # Поддерживаем соединение открытым
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:
-        менеджер.отключить(websocket)
-    finally:
-        дб.close()
+        менеджер.отключить(websocket, symbol)
