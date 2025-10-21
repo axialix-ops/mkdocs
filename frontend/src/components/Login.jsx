@@ -20,7 +20,7 @@ const Login = ({ setToken }) => {
 
     return (
         <form onSubmit={handleSubmit}>
-            <h2>Login</h2>
+            <h2>Вход</h2>
             <input
                 type="email"
                 placeholder="Email"
@@ -29,11 +29,11 @@ const Login = ({ setToken }) => {
             />
             <input
                 type="password"
-                placeholder="Password"
+                placeholder="Пароль"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
             />
-            <button type="submit">Login</button>
+            <button type="submit">Войти</button>
         </form>
     );
 };

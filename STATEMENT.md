@@ -25,3 +25,13 @@ Our long-term vision is to expand the platform to include additional features su
 *   **Social Trading:** Allowing users to follow and copy the trades of successful traders.
 *   **Paper Trading Competitions:** Hosting trading competitions with leaderboards and prizes.
 *   **Educational Resources:** Providing users with tutorials, articles, and webinars to help them improve their trading skills.
+
+## Development Roadmap
+
+Here are the next steps in the development of the project:
+
+*   **Margin Trading:** Implementation of a full-fledged margin trading system with leverage, margin calls, and liquidation.
+*   **Advanced Order Types:** Adding support for limit, stop-loss, and take-profit orders.
+*   **Technical Indicators:** Integrating popular technical indicators such as Moving Averages, RSI, and MACD into the charting library.
+*   **User Profile:** Creating a user profile page with trading history, performance statistics, and account settings.
+*   **Wallet Enhancements:** Adding features like transaction history, deposits, and withdrawals to the wallet.

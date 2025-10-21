@@ -7,7 +7,7 @@ import './App.css';
 
 const Wallet = ({ wallets }) => (
     <div>
-        <h2>Wallet</h2>
+        <h2>Кошелек</h2>
         {wallets.map(wallet => (
             <p key={wallet.currency}>{wallet.currency}: {wallet.balance.toFixed(2)}</p>
         ))}
@@ -27,41 +27,41 @@ const OrderForm = ({ token }) => {
                 order_type: 'MARKET',
                 quantity: parseFloat(quantity),
             }, { headers: { Authorization: `Bearer ${token}` } });
-            alert('Order placed successfully!');
+            alert('Ордер успешно размещен!');
             setQuantity('');
         } catch (error) {
-            console.error('Order failed:', error);
-            alert('Order failed. Please check your balance and try again.');
+            console.error('Не удалось разместить ордер:', error);
+            alert('Не удалось разместить ордер. Проверьте баланс и попробуйте снова.');
         }
     };
 
     return (
         <form onSubmit={handleSubmit}>
-            <h2>Place Order</h2>
+            <h2>Разместить ордер</h2>
             <select value={side} onChange={e => setSide(e.target.value)}>
-                <option value="BUY">Buy</option>
-                <option value="SELL">Sell</option>
+                <option value="BUY">Купить</option>
+                <option value="SELL">Продать</option>
             </select>
             <input
                 type="number"
-                placeholder="Quantity"
+                placeholder="Количество"
                 value={quantity}
                 onChange={e => setQuantity(e.target.value)}
             />
-            <button type="submit">Place Order</button>
+            <button type="submit">Разместить ордер</button>
         </form>
     );
 };
 
 const Positions = ({ positions }) => (
     <div>
-        <h2>Positions</h2>
+        <h2>Позиции</h2>
         <table>
             <thead>
                 <tr>
-                    <th>Symbol</th>
-                    <th>Quantity</th>
-                    <th>Entry Price</th>
+                    <th>Символ</th>
+                    <th>Количество</th>
+                    <th>Цена входа</th>
                     <th>P&L</th>
                 </tr>
             </thead>
@@ -123,14 +123,14 @@ function App() {
     return (
         <div className="App">
             <header>
-                <h1>Crypto Exchange Simulator</h1>
+                <h1>Симулятор Криптобиржи</h1>
                 <div>
                     <select value={symbol} onChange={e => setSymbol(e.target.value)}>
                         <option value="bitcoin">Bitcoin</option>
                         <option value="ethereum">Ethereum</option>
                         <option value="ripple">Ripple</option>
                     </select>
-                    <button onClick={handleLogout}>Logout</button>
+                    <button onClick={handleLogout}>Выйти</button>
                 </div>
             </header>
             <main>

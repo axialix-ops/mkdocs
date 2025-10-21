@@ -97,6 +97,7 @@ async def websocket_эндпоинт(websocket: WebSocket, symbol: str):
                 "high": entry[2],
                 "low": entry[3],
                 "close": entry[4],
+                "symbol": symbol,
             }
             await websocket.send_text(json.dumps(candle_data))
 

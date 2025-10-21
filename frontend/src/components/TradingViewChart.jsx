@@ -54,8 +54,6 @@ const TradingViewChart = ({ symbol = 'bitcoin' }) => {
         ws.onmessage = (event) => {
             const candleData = JSON.parse(event.data);
             if (candleData.symbol === symbol) {
-                // Преобразуем время из ISO-строки в Unix-таймстемп
-                candleData.time = new Date(candleData.time).getTime() / 1000;
                 candleSeriesRef.current.update(candleData);
             }
         };
@@ -78,7 +76,7 @@ const TradingViewChart = ({ symbol = 'bitcoin' }) => {
                 chartRef.current.remove();
             }
         };
-    }, []);
+    }, [symbol]);
 
     useEffect(() => {
         resizeObserverRef.current = new ResizeObserver(entries => {

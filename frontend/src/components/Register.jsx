@@ -21,7 +21,7 @@ const Register = () => {
 
     return (
         <form onSubmit={handleSubmit}>
-            <h2>Register</h2>
+            <h2>Регистрация</h2>
             <input
                 type="email"
                 placeholder="Email"
@@ -30,11 +30,11 @@ const Register = () => {
             />
             <input
                 type="password"
-                placeholder="Password"
+                placeholder="Пароль"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
             />
-            <button type="submit">Register</button>
+            <button type="submit">Зарегистрироваться</button>
         </form>
     );
 };
